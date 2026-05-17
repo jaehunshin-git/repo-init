@@ -11,7 +11,8 @@ if [[ $# -ne 1 ]]; then
 fi
 
 NEW_REPO="$1"
-TARGET_REPO="jaehunshin-git/${NEW_REPO}"
+OWNER="$(gh api user --jq .login)"
+TARGET_REPO="${OWNER}/${NEW_REPO}"
 
 echo "1/3 새 저장소 생성: ${TARGET_REPO}"
 gh repo create "${TARGET_REPO}" "--${VISIBILITY}" --template "${TEMPLATE_REPO}"
