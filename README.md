@@ -43,15 +43,11 @@ gh alias set --shell --clobber newrepo 'repo="$1"; target="jaehunshin-git/${repo
 │   ├── fix.yml
 │   ├── init.yml
 │   └── refactor.yml
-├── PULL_REQUEST_TEMPLATE.md
-└── workflows/
-    ├── ci.yml
-    └── cd.yml
+└── PULL_REQUEST_TEMPLATE.md
 ```
 
 - 이슈 템플릿은 현재 라벨 세트와 연결되어 있습니다.
-- `ci.yml`, `cd.yml`은 Spring Boot + Gradle + Docker + AWS SSM 배포 흐름을 기준으로 작성되어 있습니다.
-- `cd.yml`을 실제로 사용하려면 `docker-compose.prod.yml`과 필요한 GitHub Secrets를 각 저장소에 맞게 준비해야 합니다.
+- 프로젝트별 CI/CD는 저장소 성격에 따라 별도로 추가합니다.
 
 ## 라벨 세트
 
