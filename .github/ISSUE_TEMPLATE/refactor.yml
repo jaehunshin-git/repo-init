@@ -1,0 +1,27 @@
+name: 'refactor: 리팩토링'
+description: '코드 리팩토링 관련 이슈를 생성할 때 사용하는 템플릿입니다'
+title: '[refactor] '
+labels: ['♻️ refactor']
+body:
+  - type: textarea
+    attributes:
+      label: 📄 Description
+      description: 리팩토링할 코드와 이유를 작성해 주세요.
+      placeholder: 어떤 코드를 왜 리팩토링해야 하는지, 현재 문제점과 개선 방향을 구체적으로 작성해주세요.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ Tasks
+      description: 리팩터링을 위한 세부 작업 목록을 체크리스트로 작성해주세요.
+      placeholder: |-
+        - [ ] 기존 코드 분석 및 문제점 파악
+        - [ ] 리팩토링 코드 작성
+        - [ ] 테스트 및 검증
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📎 ETC
+      description: 리팩토링 관련 참고 자료나 추가 정보가 있다면 작성해주세요.
+      placeholder: 성능 측정 결과, 관련 이슈 링크, 참고 문서, 아키텍처 다이어그램 등

@@ -1,0 +1,160 @@
+name: CD
+
+# main 브랜치에 반영된 코드를 운영 서버에 자동 배포한다.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# GHCR 이미지 push와 AWS OIDC 인증에 필요한 최소 권한이다.
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+# 같은 브랜치에서 중복 배포가 실행되면 이전 실행을 취소한다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  DEPLOY_PATH: /home/ubuntu/kakaotalk-server
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build JAR
+        run: ./gradlew clean bootJar --no-daemon
+
+      - name: Set Docker image name
+        id: image
+        run: |
+          IMAGE_NAME="${GITHUB_REPOSITORY,,}"
+          echo "name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "image=${REGISTRY}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.image }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Create deployment env file
+        env:
+          DOCKER_IMAGE: ${{ steps.image.outputs.image }}:latest
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DDL_AUTO: ${{ secrets.DDL_AUTO || 'validate' }}
+        run: |
+          {
+            printf 'DOCKER_IMAGE=%s\n' "$DOCKER_IMAGE"
+            printf 'DB_URL=%s\n' "$DB_URL"
+            printf 'DB_USERNAME=%s\n' "$DB_USERNAME"
+            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
+            printf 'DDL_AUTO=%s\n' "$DDL_AUTO"
+          } > deploy.env
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.1.1
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActionsDeploy
+
+      - name: Deploy through Systems Manager
+        env:
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMPOSE_BASE64="$(base64 -w 0 docker-compose.prod.yml)"
+          DEPLOY_ENV_BASE64="$(base64 -w 0 deploy.env)"
+
+          jq -n \
+            --arg deployPath "$DEPLOY_PATH" \
+            --arg composeBase64 "$COMPOSE_BASE64" \
+            --arg envFileBase64 "$DEPLOY_ENV_BASE64" \
+            --arg registry "$REGISTRY" \
+            --arg actor "$GITHUB_ACTOR" \
+            --arg token "$GHCR_TOKEN" \
+            '{
+              commands: [
+                "set -eu",
+                "mkdir -p " + ($deployPath | @sh),
+                "printf %s " + ($composeBase64 | @sh) + " | base64 -d > " + (($deployPath + "/docker-compose.prod.yml") | @sh),
+                "printf %s " + ($envFileBase64 | @sh) + " | base64 -d > " + (($deployPath + "/.deploy.env") | @sh),
+                "cd " + ($deployPath | @sh),
+                "trap \"rm -f .deploy.env\" EXIT",
+                "echo " + ($token | @sh) + " | docker login " + ($registry | @sh) + " -u " + ($actor | @sh) + " --password-stdin",
+                "docker compose --env-file .deploy.env -f docker-compose.prod.yml pull",
+                "docker compose --env-file .deploy.env -f docker-compose.prod.yml up -d",
+                "attempt=0",
+                "until curl -fsS http://localhost:8080/swagger-ui/index.html >/dev/null; do attempt=$((attempt + 1)); if [ \"$attempt\" -ge 30 ]; then docker compose --env-file .deploy.env -f docker-compose.prod.yml logs --tail=100 app; exit 1; fi; sleep 2; done",
+                "docker image prune -f"
+              ]
+            }' > ssm-parameters.json
+
+          COMMAND_ID="$(
+            aws ssm send-command \
+              --instance-ids "$EC2_INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --comment "Deploy ${GITHUB_REPOSITORY}@${GITHUB_SHA}" \
+              --parameters file://ssm-parameters.json \
+              --query 'Command.CommandId' \
+              --output text
+          )"
+
+          if ! aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID"; then
+            aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --query '{Status:Status,StandardOutputContent:StandardOutputContent,StandardErrorContent:StandardErrorContent}' \
+              --output json
+            exit 1
+          fi
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query '{Status:Status,StandardOutputContent:StandardOutputContent,StandardErrorContent:StandardErrorContent}' \
+            --output json

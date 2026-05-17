@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TEMPLATE_REPO="jaehunshin-git/label-template"
+TEMPLATE_REPO="jaehunshin-git/repo-init"
 VISIBILITY="private"
 
 if [[ $# -ne 1 ]]; then
@@ -14,7 +14,7 @@ NEW_REPO="$1"
 TARGET_REPO="jaehunshin-git/${NEW_REPO}"
 
 echo "1/3 새 저장소 생성: ${TARGET_REPO}"
-gh repo create "${TARGET_REPO}" "--${VISIBILITY}"
+gh repo create "${TARGET_REPO}" "--${VISIBILITY}" --template "${TEMPLATE_REPO}"
 
 echo "2/3 기존 라벨 전체 삭제"
 gh label list --repo "${TARGET_REPO}" --json name --jq '.[].name' |
