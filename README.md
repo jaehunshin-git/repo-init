@@ -23,7 +23,15 @@ gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 
 ## 가장 편한 사용법
 
-GitHub CLI alias를 등록해두면 어느 폴더에서든 아래 명령만 실행하면 됩니다.
+이 저장소를 자주 사용할 예정이라면, 각 사용자가 자기 컴퓨터에 GitHub CLI alias를 한 번만 등록해두는 방식이 가장 편합니다.
+
+alias는 필수 기능이 아닙니다.
+
+- 한 번만 사용할 사람은 `Use this template` 또는 `gh repo create --template ...`만 사용해도 됩니다.
+- 여러 번 사용할 사람은 아래 alias를 자기 터미널에 한 번 등록해두면 됩니다.
+- alias는 이 저장소에 저장되는 것이 아니라, **각 사용자의 로컬 GitHub CLI 설정에 저장되는 개인 단축 명령**입니다.
+
+등록 후에는 어느 폴더에서든 아래 명령만 실행하면 됩니다.
 
 ```bash
 gh newrepo 새저장소이름
@@ -45,6 +53,15 @@ chmod +x create-repo.sh
 ```
 
 ## alias 등록 명령
+
+이 명령은 이 저장소를 쓰는 사람이 **자기 컴퓨터에서 한 번만** 실행합니다.
+
+예를 들면:
+
+1. `repo-init`을 처음 발견한 사용자가 아래 명령을 실행합니다.
+2. 그 사용자의 로컬 GitHub CLI에 `gh newrepo` 단축 명령이 등록됩니다.
+3. 이후부터는 다른 폴더에서도 `gh newrepo 새저장소이름`만 입력하면 됩니다.
+4. 새 컴퓨터를 쓰거나 GitHub CLI 설정을 초기화했다면 다시 한 번 등록하면 됩니다.
 
 새 환경에서 다시 설정할 때는 아래 명령을 사용합니다.
 
