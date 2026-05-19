@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/repo-init-banner.svg" alt="repo-init 배너" width="100%" />
+</p>
+
 # repo-init
 
 새 GitHub 저장소를 만들 때 공통 라벨 세트를 빠르게 적용하기 위한 설정 저장소입니다.
