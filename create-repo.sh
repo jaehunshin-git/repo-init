@@ -27,17 +27,26 @@ fi
 OWNER="$(gh api user --jq .login)"
 TARGET_REPO="${OWNER}/${NEW_REPO}"
 
-echo "1/3 새 저장소 생성: ${TARGET_REPO}"
+if [[ -e "${NEW_REPO}" ]]; then
+  echo "이미 같은 이름의 로컬 경로가 있습니다: ${NEW_REPO}"
+  exit 1
+fi
+
+echo "1/4 새 저장소 생성: ${TARGET_REPO}"
 gh repo create "${TARGET_REPO}" "${VISIBILITY}"
 
-echo "2/3 기존 라벨 전체 삭제"
+echo "2/4 기존 라벨 전체 삭제"
 gh label list --repo "${TARGET_REPO}" --json name --jq '.[].name' |
 while IFS= read -r label; do
   [[ -z "${label}" ]] && continue
   gh label delete "${label}" --repo "${TARGET_REPO}" --yes
 done
 
-echo "3/3 라벨 세트 복제"
+echo "3/4 라벨 세트 복제"
 gh label clone "${LABEL_SOURCE_REPO}" --repo "${TARGET_REPO}" --force
 
+echo "4/4 로컬 저장소 clone"
+gh repo clone "${TARGET_REPO}" "${NEW_REPO}"
+
 echo "완료: https://github.com/${TARGET_REPO}"
+echo "로컬: $(pwd)/${NEW_REPO}"
