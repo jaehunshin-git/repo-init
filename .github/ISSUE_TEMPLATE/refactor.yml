@@ -1,4 +1,4 @@
-name: 'refactor: 리팩토링'
+name: '[refactor] 리팩토링'
 description: '코드 리팩토링 관련 이슈를 생성할 때 사용하는 템플릿입니다'
 title: '[refactor] '
 labels: ['♻️ refactor']
