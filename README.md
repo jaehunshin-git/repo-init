@@ -1,14 +1,15 @@
 # repo-init
 
-새 GitHub 저장소를 만들 때 기본 파일 구조와 공통 라벨 세트를 한 번에 적용하기 위한 템플릿 저장소입니다.
+새 GitHub 저장소를 만들 때 공통 라벨 세트를 빠르게 적용하기 위한 설정 저장소입니다.
+
+`gh newrepo` alias와 `create-repo.sh`는 새 저장소에 이 저장소의 파일을 복사하지 않고, 빈 저장소를 만든 뒤 라벨만 정리합니다.
 
 ## 사용 방법
 
 ### 1. 웹에서 사용하기
 
-1. 이 저장소에서 `Use this template`를 클릭합니다.
-2. 새 저장소 이름과 공개 범위를 선택해 저장소를 만듭니다.
-3. 라벨도 추가하고 싶다면 아래 명령을 실행합니다.
+1. GitHub 웹에서 새 저장소를 만듭니다.
+2. 라벨을 추가하고 싶다면 아래 명령을 실행합니다.
 
 ```bash
 gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
@@ -20,21 +21,23 @@ gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 
 #### 한 번만 사용할 때
 
-저장소를 한 번만 만들 거라면 아래 두 단계면 충분합니다.
+저장소를 한 번만 만들 거라면 아래 명령을 순서대로 실행하면 됩니다.
 
 ```bash
-gh repo create 새저장소이름 --private --template jaehunshin-git/repo-init
+gh repo create 새저장소이름 --private
+gh label list --repo 내아이디/새저장소 --json name --jq '.[].name' | while IFS= read -r label; do [ -z "${label}" ] || gh label delete "${label}" --repo 내아이디/새저장소 --yes; done
 gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 ```
 
 공개 저장소로 만들고 싶다면 첫 번째 명령의 `--private`를 `--public`으로 바꾸면 됩니다.
 
 ```bash
-gh repo create 새저장소이름 --public --template jaehunshin-git/repo-init
+gh repo create 새저장소이름 --public
+gh label list --repo 내아이디/새저장소 --json name --jq '.[].name' | while IFS= read -r label; do [ -z "${label}" ] || gh label delete "${label}" --repo 내아이디/새저장소 --yes; done
 gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 ```
 
-템플릿 저장소는 파일 구조를 복사하고, 라벨은 별도 명령으로 복제합니다.
+이 방식은 저장소 파일을 복사하지 않고 라벨만 복제합니다.
 
 > `gh label clone`만 사용하면 GitHub가 새 저장소에 기본으로 넣어주는 라벨은 그대로 남습니다.  
 > 기본 라벨까지 전부 지우고 이 저장소의 라벨 세트만 남기고 싶다면 아래 `gh newrepo` alias 또는 로컬 스크립트를 사용하세요.
@@ -45,7 +48,7 @@ gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 
 alias는 필수 기능이 아닙니다.
 
-- 한 번만 사용할 사람은 `Use this template` 또는 `gh repo create --template ...`만 사용해도 됩니다.
+- 한 번만 사용할 사람은 `gh repo create`와 `gh label clone`만 사용해도 됩니다.
 - 여러 번 사용할 사람은 아래 alias를 자기 터미널에 한 번 등록해두면 됩니다.
 - alias는 이 저장소에 저장되는 것이 아니라, **각 사용자의 로컬 GitHub CLI 설정에 저장되는 개인 단축 명령**입니다.
 
@@ -60,7 +63,7 @@ alias는 필수 기능이 아닙니다.
 3. 새 컴퓨터를 쓰거나 GitHub CLI 설정을 초기화했다면 다시 한 번 등록하면 됩니다.
 
 ```bash
-gh alias set --shell --clobber newrepo 'repo="$1"; visibility="${2:---private}"; if [ -z "$repo" ] || [ "$#" -gt 2 ]; then echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1; fi; case "$visibility" in --private|--public) ;; *) echo "지원하지 않는 공개 범위 옵션입니다: $visibility"; echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1 ;; esac; owner="$(gh api user --jq .login)"; target="${owner}/${repo}"; gh repo create "${target}" "$visibility" --template jaehunshin-git/repo-init && gh label list --repo "${target}" --json name --jq '\''.[].name'\'' | while IFS= read -r label; do [ -z "${label}" ] || gh label delete "${label}" --repo "${target}" --yes; done && gh label clone jaehunshin-git/repo-init --repo "${target}" --force && echo "완료: https://github.com/${target}"'
+gh alias set --shell --clobber newrepo 'repo="$1"; visibility="${2:---private}"; if [ -z "$repo" ] || [ "$#" -gt 2 ]; then echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1; fi; case "$visibility" in --private|--public) ;; *) echo "지원하지 않는 공개 범위 옵션입니다: $visibility"; echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1 ;; esac; source="jaehunshin-git/repo-init"; owner="$(gh api user --jq .login)"; target="${owner}/${repo}"; gh repo create "${target}" "$visibility" && gh label list --repo "${target}" --json name --jq '\''.[].name'\'' | while IFS= read -r label; do [ -z "${label}" ] || gh label delete "${label}" --repo "${target}" --yes; done && gh label clone "${source}" --repo "${target}" --force && echo "완료: https://github.com/${target}"'
 ```
 
 ##### 2) alias 사용
@@ -76,7 +79,7 @@ gh newrepo 새저장소이름 --public
 
 이 명령은 아래 순서로 동작합니다.
 
-1. 이 저장소를 템플릿으로 사용해 새 저장소를 만듭니다.
+1. 빈 새 저장소를 만듭니다.
 2. 새 저장소에 기본으로 들어 있는 라벨을 전부 삭제합니다.
 3. 이 저장소의 라벨 세트를 새 저장소로 복제합니다.
 
@@ -92,7 +95,10 @@ chmod +x create-repo.sh
 
 이 경우에도 공개 범위 플래그를 생략하면 `--private`가 기본값으로 사용됩니다.
 
-## 포함된 템플릿
+## 포함된 참고 템플릿
+
+이 저장소에는 참고용 이슈/PR 템플릿도 들어 있습니다.
+다만 `gh newrepo` alias와 `create-repo.sh`는 아래 파일들을 새 저장소로 복사하지 않습니다.
 
 ```text
 .github/
