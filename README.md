@@ -4,28 +4,29 @@
 
 # repo-init
 
-새 GitHub 저장소를 만들 때 공통 라벨 세트를 빠르게 적용하기 위한 설정 저장소입니다.
+새 GitHub 저장소를 만들 때 공통 라벨 세트와 이슈/PR 템플릿을 빠르게 적용하는 설정 저장소입니다.
 
-`gh newrepo` alias와 `create-repo.sh`는 새 저장소에 이 저장소의 파일을 복사하지 않고, 빈 저장소를 만든 뒤 라벨만 정리하고 로컬로 clone합니다.
+`gh newrepo` alias와 `create-repo.sh`는 새 저장소를 생성하고 기본 라벨을 정리한 뒤, 이 저장소의 라벨 세트와 이슈/PR 템플릿을 적용합니다.
+템플릿 파일은 첫 커밋으로 push되며, 생성된 저장소는 현재 디렉터리에 clone됩니다.
 
 ## 사용 방법
 
 ### 1. 웹에서 사용하기
 
 1. GitHub 웹에서 새 저장소를 만듭니다.
-2. 라벨을 추가하고 싶다면 아래 명령을 실행합니다.
+2. 라벨만 추가하려면 아래 명령을 실행합니다.
 
 ```bash
 gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 ```
 
-기본 라벨까지 전부 지우고 이 저장소의 라벨 세트만 남기고 싶다면 아래 `GitHub CLI로 사용하기`의 alias 또는 로컬 스크립트 방식을 사용하세요.
+기본 라벨 제거와 이슈/PR 템플릿 적용까지 함께 처리하려면 아래 `GitHub CLI로 사용하기`의 alias 또는 로컬 스크립트를 사용합니다.
 
 ### 2. GitHub CLI로 사용하기
 
-#### 한 번만 사용할 때
+#### 기본 명령으로 실행하기
 
-저장소를 한 번만 만들 거라면 아래 명령을 순서대로 실행하면 됩니다.
+저장소 생성, 라벨 복제, 로컬 clone을 직접 실행하려면 아래 명령을 순서대로 사용합니다.
 
 ```bash
 gh repo create 새저장소이름 --private
@@ -34,7 +35,7 @@ gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 gh repo clone 내아이디/새저장소 새저장소이름
 ```
 
-공개 저장소로 만들고 싶다면 첫 번째 명령의 `--private`를 `--public`으로 바꾸면 됩니다.
+공개 저장소로 만들려면 첫 번째 명령의 `--private`를 `--public`으로 바꿉니다.
 
 ```bash
 gh repo create 새저장소이름 --public
@@ -44,32 +45,82 @@ gh repo clone 내아이디/새저장소 새저장소이름
 ```
 
 이 방식은 저장소 파일을 복사하지 않고 라벨만 복제한 뒤, 현재 디렉터리에 새 저장소를 clone합니다.
+이슈/PR 템플릿까지 자동으로 적용하려면 아래 `gh newrepo` alias 또는 로컬 스크립트를 사용합니다.
 
 > `gh label clone`만 사용하면 GitHub가 새 저장소에 기본으로 넣어주는 라벨은 그대로 남습니다.  
-> 기본 라벨까지 전부 지우고 이 저장소의 라벨 세트만 남기고 싶다면 아래 `gh newrepo` alias 또는 로컬 스크립트를 사용하세요.
+> 기본 라벨 제거, 라벨 세트 적용, 이슈/PR 템플릿 복사를 한 번에 처리하려면 아래 `gh newrepo` alias 또는 로컬 스크립트를 사용합니다.
 
-#### 자주 사용할 때
+#### alias로 실행하기
 
-이 저장소를 자주 사용할 예정이라면, 각 사용자가 자기 컴퓨터에 GitHub CLI alias를 한 번만 등록해두는 방식이 가장 편합니다.
+반복해서 사용할 경우 GitHub CLI alias를 등록해두면 같은 흐름을 하나의 명령으로 실행할 수 있습니다.
 
-alias는 필수 기능이 아닙니다.
+alias 등록은 선택 사항입니다.
 
-- 한 번만 사용할 사람은 `gh repo create`, `gh label clone`, `gh repo clone`만 사용해도 됩니다.
-- 여러 번 사용할 사람은 아래 alias를 자기 터미널에 한 번 등록해두면 됩니다.
-- alias는 이 저장소에 저장되는 것이 아니라, **각 사용자의 로컬 GitHub CLI 설정에 저장되는 개인 단축 명령**입니다.
+- 수동 실행이 필요하면 위의 `gh repo create`, `gh label clone`, `gh repo clone` 명령을 사용합니다.
+- 반복 실행이 필요하면 아래 alias를 로컬 GitHub CLI 설정에 등록합니다.
+- alias는 이 저장소에 저장되지 않고, **로컬 GitHub CLI 설정에 저장되는 개인 단축 명령**입니다.
 
 ##### 1) alias 등록
 
-이 명령은 이 저장소를 쓰는 사람이 **자기 컴퓨터에서 한 번만** 실행합니다.
+이 명령은 alias를 사용할 로컬 환경에서 최초 등록 시 실행합니다.
 
-예를 들면:
+등록 흐름은 다음과 같습니다.
 
-1. `repo-init`을 처음 발견한 사용자가 아래 명령을 실행합니다.
-2. 그 사용자의 로컬 GitHub CLI에 `gh newrepo` 단축 명령이 등록됩니다.
-3. 새 컴퓨터를 쓰거나 GitHub CLI 설정을 초기화했다면 다시 한 번 등록하면 됩니다.
+1. 아래 명령을 실행합니다.
+2. 로컬 GitHub CLI에 `gh newrepo` 단축 명령이 등록됩니다.
+3. 새 컴퓨터를 사용하거나 GitHub CLI 설정을 초기화한 경우 다시 등록합니다.
 
 ```bash
-gh alias set --shell --clobber newrepo 'repo="$1"; visibility="${2:---private}"; if [ -z "$repo" ] || [ "$#" -gt 2 ]; then echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1; fi; case "$visibility" in --private|--public) ;; *) echo "지원하지 않는 공개 범위 옵션입니다: $visibility"; echo "사용법: gh newrepo 새저장소이름 [--private|--public]"; exit 1 ;; esac; if [ -e "$repo" ]; then echo "이미 같은 이름의 로컬 경로가 있습니다: $repo"; exit 1; fi; source="jaehunshin-git/repo-init"; owner="$(gh api user --jq .login)"; target="${owner}/${repo}"; gh repo create "${target}" "$visibility" && gh label list --repo "${target}" --json name --jq '\''.[].name'\'' | while IFS= read -r label; do [ -z "${label}" ] || gh label delete "${label}" --repo "${target}" --yes; done && gh label clone "${source}" --repo "${target}" --force && gh repo clone "${target}" "${repo}" && echo "완료: https://github.com/${target}" && echo "로컬: $(pwd)/${repo}"'
+gh alias set --shell --clobber newrepo '
+repo="$1"
+visibility="${2:---private}"
+
+if [ -z "$repo" ] || [ "$#" -gt 2 ]; then
+  echo "사용법: gh newrepo 새저장소이름 [--private|--public]"
+  exit 1
+fi
+
+case "$visibility" in
+  --private|--public) ;;
+  *)
+    echo "지원하지 않는 공개 범위 옵션입니다: $visibility"
+    echo "사용법: gh newrepo 새저장소이름 [--private|--public]"
+    exit 1
+    ;;
+esac
+
+if [ -e "$repo" ]; then
+  echo "이미 같은 이름의 로컬 경로가 있습니다: $repo"
+  exit 1
+fi
+
+source="jaehunshin-git/repo-init"
+owner="$(gh api user --jq .login)"
+target="${owner}/${repo}"
+template_dir="$(mktemp -d)"
+
+cleanup() {
+  rm -rf "$template_dir"
+}
+trap cleanup EXIT
+
+gh repo clone "$source" "$template_dir" &&
+gh repo create "$target" "$visibility" &&
+gh label list --repo "$target" --json name --jq '\''.[].name'\'' |
+while IFS= read -r label; do
+  [ -z "$label" ] || gh label delete "$label" --repo "$target" --yes
+done &&
+gh label clone "$source" --repo "$target" --force &&
+gh repo clone "$target" "$repo" &&
+mkdir -p "$repo/.github" &&
+cp -R "$template_dir/.github/ISSUE_TEMPLATE" "$repo/.github/" &&
+cp "$template_dir/.github/PULL_REQUEST_TEMPLATE.md" "$repo/.github/PULL_REQUEST_TEMPLATE.md" &&
+git -C "$repo" add .github/ISSUE_TEMPLATE .github/PULL_REQUEST_TEMPLATE.md &&
+git -C "$repo" commit -m "chore: add issue and PR templates" &&
+git -C "$repo" push -u origin HEAD &&
+echo "완료: https://github.com/$target" &&
+echo "로컬: $(pwd)/$repo"
+'
 ```
 
 ##### 2) alias 사용
@@ -89,6 +140,8 @@ gh newrepo 새저장소이름 --public
 2. 새 저장소에 기본으로 들어 있는 라벨을 전부 삭제합니다.
 3. 이 저장소의 라벨 세트를 새 저장소로 복제합니다.
 4. 현재 디렉터리에 새 저장소를 clone합니다.
+5. 이 저장소의 이슈/PR 템플릿을 새 저장소의 `.github` 디렉터리로 복사합니다.
+6. 템플릿 파일을 `chore: add issue and PR templates` 커밋으로 push합니다.
 
 #### 로컬 스크립트로 사용할 때
 
@@ -105,12 +158,13 @@ chmod +x create-repo.sh
 
 ## 포함된 참고 템플릿
 
-이 저장소에는 참고용 이슈/PR 템플릿도 들어 있습니다.
-다만 `gh newrepo` alias와 `create-repo.sh`는 아래 파일들을 새 저장소로 복사하지 않습니다.
+이 저장소에는 새 저장소로 복제할 이슈/PR 템플릿도 들어 있습니다.
+`gh newrepo` alias와 `create-repo.sh`는 아래 파일들을 새 저장소로 복사한 뒤 첫 커밋으로 push합니다.
 
 ```text
 .github/
 ├── ISSUE_TEMPLATE/
+│   ├── config.yml
 │   ├── docs.yml
 │   ├── feature.yml
 │   ├── fix.yml
