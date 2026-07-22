@@ -46,13 +46,44 @@ git clone https://github.com/jaehunshin-git/repo-init.git
 ### 1. 웹에서 사용하기
 
 1. GitHub 웹에서 새 저장소를 만듭니다.
-2. 라벨만 추가하려면 아래 명령을 실행합니다.
+2. 라벨만 추가하려면 아래 명령을 실행합니다. 이 명령은 기존 라벨을 유지하면서 같은 이름의 라벨을 갱신하고, 없는 라벨을 추가합니다.
 
 ```bash
 gh label clone jaehunshin-git/repo-init --repo 내아이디/새저장소 --force
 ```
 
-원격 저장소의 기본 라벨 제거와 이슈/PR 템플릿 적용까지 함께 처리하려면 아래 `GitHub CLI로 사용하기`의 alias 또는 로컬 스크립트를 원격 모드로 사용합니다.
+GitHub 웹에서 이미 만든 저장소의 기본 라벨을 제거하고, 이 저장소의 라벨 및 이슈/PR 템플릿을 모두 적용하려면 아래 명령을 사용합니다.
+
+> 이 명령은 **대상 저장소 디렉터리 밖**, 즉 대상 저장소를 clone할 상위 디렉터리에서 실행하세요. 현재 디렉터리에 `${REPO}` 또는 `repo-init`이라는 경로가 이미 있으면 clone이 실패합니다.
+> 첫 번째 반복문은 대상 저장소의 라벨을 모두 삭제하므로, 유지할 라벨이 있다면 삭제 대상에서 제외하거나 라벨 복제 명령만 실행하세요.
+
+```bash
+OWNER="$(gh api user --jq .login)"
+REPO="이미-만든-레포-이름"
+
+# 기존 라벨을 모두 지운 뒤 repo-init의 라벨 세트를 적용합니다.
+gh label list --repo "${OWNER}/${REPO}" --json name --jq '.[].name' |
+while IFS= read -r label; do
+  [ -z "${label}" ] || gh label delete "${label}" --repo "${OWNER}/${REPO}" --yes
+done
+
+gh label clone jaehunshin-git/repo-init --repo "${OWNER}/${REPO}" --force
+
+# 대상 레포와 템플릿 원본을 clone합니다.
+gh repo clone "${OWNER}/${REPO}" "${REPO}"
+git clone https://github.com/jaehunshin-git/repo-init.git repo-init
+
+# 이슈/PR 템플릿을 적용하고 push합니다.
+mkdir -p "${REPO}/.github"
+cp -R repo-init/.github/ISSUE_TEMPLATE "${REPO}/.github/"
+cp repo-init/.github/PULL_REQUEST_TEMPLATE.md "${REPO}/.github/"
+
+git -C "${REPO}" add .github
+git -C "${REPO}" commit -m "chore: 이슈 및 PR 템플릿 추가"
+git -C "${REPO}" push
+```
+
+`create-repo.sh`와 `gh newrepo`는 새 저장소 생성용이므로, GitHub 웹에서 이미 만든 저장소에는 위 명령을 사용합니다.
 
 ### 2. GitHub CLI로 사용하기
 
