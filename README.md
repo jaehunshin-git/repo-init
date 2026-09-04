@@ -8,6 +8,24 @@ GitHub에서 **이미 만든 저장소**에 공통 라벨 세트와 이슈/PR �
 
 새 저장소를 만드는 기능도 제공하지만, 주된 사용 흐름은 저장소를 만든 뒤 이 문서의 명령으로 협업 규칙을 적용하는 것입니다.
 
+## Codex 스킬로 설치하기
+
+이 저장소는 Codex에서 사용할 수 있는 전역 스킬도 함께 제공합니다. 스킬은 [skills/github-repo-init](skills/github-repo-init) 경로에 있으며, 기존 저장소에 협업 설정을 적용하거나 새 저장소를 초기화해 달라는 요청에 사용할 수 있습니다.
+
+```bash
+git clone https://github.com/jaehunshin-git/repo-init.git
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
+cp -R repo-init/skills/github-repo-init "${CODEX_HOME:-$HOME/.codex}/skills/"
+```
+
+같은 이름의 스킬이 이미 설치되어 있으면 먼저 제거하거나 내용을 검토한 뒤 갱신하세요. 설치 후 새 Codex 대화에서 다음처럼 요청할 수 있습니다.
+
+```text
+이 GitHub 저장소에 repo-init 표준 라벨과 이슈/PR 템플릿을 적용해줘.
+```
+
+스킬은 이 저장소의 최신 템플릿과 라벨을 기준으로 작업합니다. 라벨 전체 교체는 대상 저장소의 기존 라벨을 삭제하므로, 스킬도 반드시 명시적인 요청 또는 확인을 받습니다.
+
 ## 빠른 시작: 기존 저장소에 전체 적용
 
 대상 저장소를 로컬에 clone한 뒤, 그 저장소의 최상위 디렉터리에서 아래 블록을 실행하세요. 기본 라벨을 포함한 기존 라벨을 지우고 repo-init의 라벨 세트를 적용하며, 이슈/PR 템플릿을 커밋하고 push합니다.

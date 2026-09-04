@@ -1,0 +1,3 @@
+interface:
+  display_name: "GitHub 저장소 초기화"
+  short_description: "GitHub 저장소의 협업 템플릿과 라벨을 적용"
