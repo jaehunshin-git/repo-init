@@ -65,7 +65,7 @@ git config --global user.email "email@example.com"
   cp -R "${TEMPLATE_DIR}/.github/ISSUE_TEMPLATE" .github/
   cp "${TEMPLATE_DIR}/.github/PULL_REQUEST_TEMPLATE.md" .github/
 
-  git add .github
+  git add .github/ISSUE_TEMPLATE .github/PULL_REQUEST_TEMPLATE.md
   if ! git diff --cached --quiet; then
     git commit -m "chore: 이슈 및 PR 템플릿 추가"
     git push
@@ -107,7 +107,19 @@ gh label clone jaehunshin-git/repo-init --repo 내아이디/대상저장소 --fo
 
 ### 라벨 세트
 
-`✨ feature` · `🐛 bug` · `📝 docs` · `♻️ refactor` · `✅ test` · `🧹 chore` · `🚧 in progress` · `⛔ blocked` · `💬 discussion` · `🙅 wontfix` · `🔥 P1` · `⚡ P2` · `🌱 P3`
+- `✨ feature`
+- `🐛 bug`
+- `📝 docs`
+- `♻️ refactor`
+- `✅ test`
+- `🧹 chore`
+- `🚧 in progress`
+- `⛔ blocked`
+- `💬 discussion`
+- `🙅 wontfix`
+- `🔥 P1`
+- `⚡ P2`
+- `🌱 P3`
 
 ## 새 저장소 만들기 (보조 기능)
 
